@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: reptrack
+      POSTGRES_USER: reptrack
+      POSTGRES_PASSWORD: reptrack
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://reptrack:reptrack@db:5432/reptrack
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    container_name: reptrack-web
+    depends_on:
+      - api
+    networks:
+      - default
+      - cf-edge
+    restart: unless-stopped
+
+volumes:
+  db-data:
+
+networks:
+  cf-edge:
+    external: true
